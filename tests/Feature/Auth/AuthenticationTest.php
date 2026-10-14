@@ -19,7 +19,7 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
 
         $response = $this->post('/login', [
             'email' => $user->email,
@@ -28,6 +28,73 @@ class AuthenticationTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_librarians_are_redirected_to_the_desk_after_login(): void
+    {
+        $user = User::factory()->create(['role' => 'librarian']);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('desk', absolute: false));
+    }
+
+    public function test_members_are_redirected_to_books_after_login(): void
+    {
+        $user = User::factory()->create(['role' => 'member']);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('books.index', absolute: false));
+    }
+
+    public function test_only_admins_can_access_the_dashboard(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'member']))
+            ->get(route('dashboard'))
+            ->assertForbidden();
+
+        $this->actingAs(User::factory()->unverified()->create(['role' => 'member']))
+            ->get(route('dashboard'))
+            ->assertForbidden();
+
+        $this->actingAs(User::factory()->create(['role' => 'librarian']))
+            ->get(route('dashboard'))
+            ->assertForbidden();
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('dashboard'))
+            ->assertOk();
+    }
+
+    public function test_dashboard_navigation_is_hidden_for_non_admins_and_guests(): void
+    {
+        $this->get(route('books.index'))
+            ->assertDontSee(route('dashboard'));
+
+        $this->actingAs(User::factory()->create(['role' => 'member']))
+            ->get(route('books.index'))
+            ->assertDontSee(route('dashboard'));
+
+        $this->actingAs(User::factory()->create(['role' => 'librarian']))
+            ->get(route('books.index'))
+            ->assertDontSee(route('dashboard'));
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('books.index'))
+            ->assertSee(route('dashboard'));
+    }
+
+    public function test_guests_are_redirected_to_login_from_the_dashboard(): void
+    {
+        $this->get(route('dashboard'))
+            ->assertRedirect(route('login'));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void

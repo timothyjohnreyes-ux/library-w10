@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .badge {
+        @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
+    }
+
+    .badge-amber {
+        @apply bg-amber-50 text-amber-700;
+    }
+
+    .badge-emerald {
+        @apply bg-emerald-50 text-emerald-700;
+    }
+
+    .badge-blue {
+        @apply bg-blue-50 text-blue-700;
+    }
+}

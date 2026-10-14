@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Member;
+use App\Models\User;
+use App\Policies\LoanPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +23,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::policy(Member::class, LoanPolicy::class);
+
+        Gate::define('manage-users', function (User $user) {
+            return $user->role === 'admin';
+        });
     }
 }
